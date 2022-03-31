@@ -1,4 +1,14 @@
 //*******************************************************************************************************************
+//FONCTIONS POUR OBTENIR LES CREDENTIALS STOCKÉS DANS LA MÉMOIRE FLASH
+//*******************************************************************************************************************
+void init_Credentials(void) {
+  preferences.begin("credentials", false);
+  WIFI_SSID = preferences.getString("WIFI_SSID", "");
+  WIFI_PASSWD = preferences.getString("WIFI_PASSWD", "");
+  PRIVATE_URL = preferences.getString("PRIVATE_URL", "");
+}
+
+//*******************************************************************************************************************
 //FONCTIONS POUR L'ACCELOROMETRE
 //*******************************************************************************************************************
 /*************************************************************************************************
@@ -188,13 +198,13 @@ void init_VinExt() {
   else {
     Vin_VinExt = coeff_A * pow(RawData_VinExt, 4) + coeff_B * pow(RawData_VinExt, 3) + coeff_C * pow(RawData_VinExt, 2) + coeff_D * RawData_VinExt + coeff_E;
   }
-  
+
   //Ramène la tension dans le domaine 0-5Volts
   tensionReelle_VinExt = FACTEUR_CONV_VIN_EXT * moyenneVin_VinExt;
-  
+
   //Rempli le tableau de la moyenen mobile avec la même valeur.
   //La valeur correspond à celle mesurée une seule fois tout juste avant
-  //l'appel de la fonction "fill"  
+  //l'appel de la fonction "fill"
   movA_VinExt.fill(tensionReelle_VinExt);
 }
 
@@ -242,13 +252,13 @@ void init_VinSol() {
   else {
     Vin_VinSol = coeff_A * pow(RawData_VinSol, 4) + coeff_B * pow(RawData_VinSol, 3) + coeff_C * pow(RawData_VinSol, 2) + coeff_D * RawData_VinSol + coeff_E;
   }
-  
+
   //Ramène la tension dans le domaine 0-5Volts
   tensionReelle_VinSol = FACTEUR_CONV_VIN_SOL * moyenneVin_VinSol;
-  
+
   //Rempli le tableau de la moyenen mobile avec la même valeur.
   //La valeur correspond à celle mesurée une seule fois tout juste avant
-  //l'appel de la fonction "fill"  
+  //l'appel de la fonction "fill"
   movA_Vin_sol.fill(tensionReelle_VinSol);
 }
 
@@ -800,13 +810,13 @@ void init_SD() {
 //=======================================
 void enregistreDonneeCarteSD() {
   //Formatte la chaîne de texte à écrire sur la carte SD
-  donnees_SD = DATE + ";" + TIME + ";" + String(temperature, 2) +\
-  ";" + String(humidite, 2) + ";" + String(pression, 2) + ";" +\
-  String(lux, 2) + ";" + String(vitesse, 2) + ";" + String(degree, 1) +\
-  ";" + String(pluie_H, 4) + ";" + String(pluie_24H, 4) + ";" +\
-  String(moyenne_Distance) + ";" + String(xAng, 2) + ";" + String(yAng, 2) +\
-  ";" + String(flat, 6) + ";" + String(flon, 6) + ";" + String(alt, 3) +\
-  ";" + String(tensionReelle_VinExt , 2) + "\r\n";
+  donnees_SD = DATE + ";" + TIME + ";" + String(temperature, 2) + \
+               ";" + String(humidite, 2) + ";" + String(pression, 2) + ";" + \
+               String(lux, 2) + ";" + String(vitesse, 2) + ";" + String(degree, 1) + \
+               ";" + String(pluie_H, 4) + ";" + String(pluie_24H, 4) + ";" + \
+               String(moyenne_Distance) + ";" + String(xAng, 2) + ";" + String(yAng, 2) + \
+               ";" + String(flat, 6) + ";" + String(flon, 6) + ";" + String(alt, 3) + \
+               ";" + String(tensionReelle_VinExt , 2) + "\r\n";
 
   //Affiche dans le moniteur série ce qui va être écrit sur la carte SD :
   Serial.println("Chaîne de texte à écrire sur la carte SD : "); Serial.println(donnees_SD);
@@ -960,28 +970,33 @@ void init_Wifi() {
   int wifiRetryCntr = 0;  //Compteur du nombre d'essais de connection Wifi
   bool etatwifi = true;   //Variable pour savoir si on peut se connecter au réseau
 
-  //Branchement au point d'accès WiFi
-  WiFi.begin(WIFI_SSID, WIFI_PASSWD);
-  Serial.print("> Branchement en cours avec le réseau : "); Serial.println(WIFI_SSID);
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print('.');
-    delay(500);
-    wifiRetryCntr++;
-    // Après un certains nombres de tentatives, on quitte la boucle de connection Wifi
-    if (wifiRetryCntr >= WIFI_RETRY_CNTR) {
-      etatwifi = false;
-      break;
-    }
+  if (WIFI_SSID == "" || WIFI_PASSWD == "") {
+    Serial.println("> Erreur, aucun SSID et mot de passe pour accéder au point d'accès WiFi !");
   }
-  // si la connection à eu lieu on l'indique
-  if (etatwifi == true) {
-    Serial.println();
-    Serial.println("> Branchement réussi avec le point d'accès WiFi.");
-  }
-  // si la connection n'a pas eu lieu on l'indique
   else {
-    Serial.println();
-    Serial.println("> Échec de la connexion avec le point d'accès WiFi.");
+    //Branchement au point d'accès WiFi
+    WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWD.c_str());
+    Serial.print("> Branchement en cours avec le réseau : "); Serial.println(WIFI_SSID);
+    while (WiFi.status() != WL_CONNECTED) {
+      Serial.print('.');
+      delay(500);
+      wifiRetryCntr++;
+      // Après un certains nombres de tentatives, on quitte la boucle de connection Wifi
+      if (wifiRetryCntr >= WIFI_RETRY_CNTR) {
+        etatwifi = false;
+        break;
+      }
+    }
+    // si la connection à eu lieu on l'indique
+    if (etatwifi == true) {
+      Serial.println();
+      Serial.println("> Branchement réussi avec le point d'accès WiFi.");
+    }
+    // si la connection n'a pas eu lieu on l'indique
+    else {
+      Serial.println();
+      Serial.println("> Échec de la connexion avec le point d'accès WiFi.");
+    }
   }
 }
 
@@ -1027,46 +1042,53 @@ void postServeur(void) {
   //===========================================
   //Transmisison au serveur de la chaîne JSON :
   //===========================================
-  //Si le branchement avec le point d'accès WiFi est valide
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    //Crée un objet http du type (classe) HTTPClient
-    HTTPClient http;
-    //==================================HEADER==================================
-    //Indique la destination de la requête HTTP :
-    //Spécifier l'URL du serveur ci-dessous :
-    http.begin(PRIVATE_URL);
-    //Spécifie l'agent ESP32 dans l'entête de la requête :
-    http.addHeader("User-Agent", "ESP32HTTPClient");
-    //Spécifie le contenu de l'entête de la requête (nous transmettons du JSON):
-    http.addHeader("Content-Type", "application/json");
-    //===========================================================================
-
-    //========================BODY========================
-    //Transmet la chaîne JSON dans le body de la requête :
-    String requestBody;
-    serializeJson(doc, requestBody);
-    int httpResponseCode = http.POST(requestBody);
-    //===================================================
-
-    //Vérifie la réponse du serveur :
-    if (httpResponseCode > 0) {
-      //Affiche le code de retour :
-      Serial.print("> Code reçu du serveur : "); Serial.println(httpResponseCode);
-      //Affiche le body transmis par le serveur :
-      String response = http.getString();
-      Serial.print("> Body du serveur : "); Serial.println(response);
-    }
-    else {
-      Serial.println("> Erreur !");
-      Serial.print("> Code reçu du serveur : "); Serial.println(httpResponseCode);
-    }
-    //Libère les ressources HTTP du ESP32
-    http.end();
+  if (WIFI_SSID == "" || WIFI_PASSWD == "" || PRIVATE_URL == "") {
+    Serial.println("> Erreur, aucun SSID, mot de passe ou URL privé pour accéder au serveur !");
   }
-  //Si le branchement avec le point d'accès WiFi n'est pas valide
   else {
-    Serial.println("> Erreur de connexion avec le point d'accès WiFi");
+    //Si le branchement avec le point d'accès WiFi est valide
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      //Crée un objet http du type (classe) HTTPClient
+      HTTPClient http;
+      //==================================HEADER==================================
+      //Indique la destination de la requête HTTP :
+      //Spécifier l'URL du serveur ci-dessous :
+      http.begin(PRIVATE_URL);
+      //Spécifie l'agent ESP32 dans l'entête de la requête :
+      http.addHeader("User-Agent", "ESP32HTTPClient");
+      //Spécifie le contenu de l'entête de la requête (nous transmettons du JSON):
+      http.addHeader("Content-Type", "application/json");
+      //===========================================================================
+
+      //========================BODY========================
+      //Transmet la chaîne JSON dans le body de la requête :
+      String requestBody;
+      serializeJson(doc, requestBody);
+      int httpResponseCode = http.POST(requestBody);
+      //===================================================
+
+      //Vérifie la réponse du serveur :
+      if (httpResponseCode > 0) {
+        //Affiche le code de retour :
+        Serial.print("> Code reçu du serveur : "); Serial.println(httpResponseCode);
+        //Affiche le body transmis par le serveur :
+        String response = http.getString();
+        Serial.print("> Body du serveur : "); Serial.println(response);
+      }
+      else {
+        Serial.println("> Erreur !");
+        Serial.print("> Code reçu du serveur : "); Serial.println(httpResponseCode);
+      }
+      //Libère les ressources HTTP du ESP32
+      http.end();
+    }
+    //Si le branchement avec le point d'accès WiFi n'est pas valide
+    else {
+      Serial.println("> Erreur de connexion avec le point d'accès WiFi");
+    }
+
+
   }
 }
 
@@ -1110,14 +1132,14 @@ void decodeurCMD() {
         Serial.println("> Tension d'entrée Vin externe : " + String(tensionReelle_VinExt , 2) + " Volts");
         Serial.println("> =========================================");
         break;
-      
+
       //Lecture de la tension d'entrée Vin solaire de la station
       case'B':
         Serial.println("> =========================================");
         Serial.println("> Tension d'entrée Vin solaire : " + String(tensionReelle_VinSol , 2) + " Volts");
         Serial.println("> =========================================");
         break;
-        
+
       //Désactive [0] /active [1] l'affichage continu
       case'c':
         if (monDecodeur.lireArgument(0) == 1) {
@@ -1129,14 +1151,14 @@ void decodeurCMD() {
           Serial.println("> Affichage continu Désactivé.");
         }
         break;
-      
+
       //Indique la distance entre la staton et et le glacier
       case'd':
         Serial.println("> =========================================");
         Serial.println("> Distance entre la station et le glacier : " + String(moyenne_Distance) + " mm");
         Serial.println("> =========================================");
         break;
-      
+
       //Indique la position de la station (GPS)
       case'g' :
         Serial.println("> =========================================");
@@ -1145,14 +1167,14 @@ void decodeurCMD() {
         Serial.println("> Longitude : " + String(flon, 6) + "°;");
         Serial.println("> =========================================");
         break;
-      
+
       //Indique l'humidité relative en %H.R.
       case'h':
         Serial.println("> =========================================");
         Serial.println("> Humidité : " + String(humidite, 2) + " %");
         Serial.println("> =========================================");
         break;
-      
+
       //Indique l'angle d'inclinaison de la station
       case'i':
         Serial.println("> =========================================");
@@ -1160,19 +1182,19 @@ void decodeurCMD() {
         Serial.println("> Angle d'inclinaison en Y : " + String(yAng, 2) + ";");
         Serial.println("> =========================================");
         break;
-      
+
       //Indique l'intensité lumineuse ne LUX
       case'l':
         Serial.println("> =========================================");
         Serial.println("> Intensité lumineuse : " + String(lux, 2) + " lux");
         Serial.println("> =========================================");
         break;
-      
+
       //Affiche ce menu
       case'm' :
         menu();
         break;
-      
+
       //Indique la quantité de pluie tombée en mm
       case'p':
         Serial.println("> ========================================================");
@@ -1180,19 +1202,19 @@ void decodeurCMD() {
         Serial.println("> Qauntité de pluie durant les 24 dernières heures : " + String(pluie_24H, 4) + " mm.");
         Serial.println("> ========================================================");
         break;
-      
+
       //Indique la pression atmosphérique en kPa
       case'P':
         Serial.println("> =========================================");
         Serial.println("> Pression : " + String(pression, 2) + " kPa");
         Serial.println("> =========================================");
         break;
-      
+
       //Affiche la valeur de chaque capteur de la station
       case 'q' :
         valCapteursPortSerie();
         break;
-      
+
       //Affiche la date et l'heure
       case'r':
         Serial.println("> =========================================");
@@ -1200,7 +1222,7 @@ void decodeurCMD() {
         Serial.println("> Heure : " + String(TIME) + ";");
         Serial.println("> =========================================");
         break;
-      
+
       //Ajuste la date et l'heure du RTC
       case'R':
         A = monDecodeur.lireArgument(0);
@@ -1212,7 +1234,7 @@ void decodeurCMD() {
         myRTC.adjust(DateTime(A, M, J, H, m, S));
         Serial.println("> Date et heure modifié avec succès!");
         break;
-      
+
       //Enregistre les mesures sur la carte micro SD
       case's':
         enregistreDonneeCarteSD();
@@ -1229,7 +1251,7 @@ void decodeurCMD() {
         Serial.println("> Température : " + String(temperature, 2) + " °C");
         Serial.println("> =========================================");
         break;
-      
+
       //Affiche la vitesse, la direction et l'angle du vent
       case'v':
         Serial.println("> =========================================");
@@ -1238,12 +1260,12 @@ void decodeurCMD() {
         Serial.println("> Angle du vent     : " + String(degree, 1) + "°.");
         Serial.println("> =========================================");
         break;
-      
+
       //Transmet l'ensemble des mesures au serveur via Wifi
       case'w' :
         postServeur();
         break;
-      
+
       //Quand la commande entrée est inconnue
       default:
         Serial.println("> Arguement non valide. Veuillez entrer une valeur dans les choix du menu.");

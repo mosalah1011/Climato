@@ -67,6 +67,9 @@ void setup() {
   //Initialise le port I2C pour permettre d'utiliser tous les modules I2C de la Station
   Wire.begin();
 
+  //Obtention des mots de passes stockés dans la mémoire Flash du ESP32
+  init_Credentials();  
+
   //Initialisation des différents capteurs de la Station météo
   init_Accelerometre();
   init_Anemometre();
